@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>X-Ray Defacer</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(90deg, #6f42c1, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 2rem;
+      width: 440px;
+      backdrop-filter: blur(12px);
+      margin-top: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    input[type="file"] { display: none; }
+
+    .file-upload {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(90deg, #6f42c1, #8b5cf6);
+      border: none;
+      color: white;
+      padding: 0.7rem 1.2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.25s ease;
+      width: 80%;
+      margin-bottom: 1.2rem;
+      text-align: center;
+    }
+
+    .file-upload:hover {
+      background: linear-gradient(90deg, #8b5cf6, #6f42c1);
+      transform: scale(1.03);
+    }
+
+    .file-name {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      font-style: italic;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin-top: 0.8rem;
+    }
+
+    button {
+      background: linear-gradient(90deg, #6f42c1, #8b5cf6);
+      color: white;
+      font-weight: 600;
+      border: none;
+      padding: 0.8rem 1.4rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      flex: 1;
+      text-align: center;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #8b5cf6, #6f42c1);
+      transform: scale(1.03);
+    }
+
+    .meta {
+      margin-top: 2.5rem;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+      padding: 1rem 2rem;
+      width: 700px;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      backdrop-filter: blur(8px);
+    }
+
+    .meta strong { color: #c4b5fd; }
+
+    .images {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+    }
+
+    .card img {
+      max-width: 360px;
+      border-radius: 0.75rem;
+      border: 1px solid #334155;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+    }
+
+    .card h3 { color: #a5b4fc; margin-bottom: 0.5rem; }
+
+    .json-output {
+      width: 700px;
+      margin-top: 2rem;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 1rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #d1d5db;
+      text-align: left;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      display: none;
+    }
+
+    p.placeholder {
+      margin-top: 3rem;
+      color: #64748b;
+      font-style: italic;
+      text-align: center;
+    }
+
+    footer {
+      margin-top: auto;
+      font-size: 0.8rem;
+      color: #475569;
+      padding: 2rem 0 0;
+    }
+
+    /* === Overlay Spinner === */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .overlay.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .spinner {
+      width: 70px;
+      height: 70px;
+      border: 6px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>X-Ray Defacer</h1>
+
+  <form id="upload-form" action="/deface" method="post" enctype="multipart/form-data">
+    <label for="file">Upload an X-Ray image:</label>
+    <label for="file" class="file-upload">Choose File</label>
+    <input type="file" id="file" name="file" accept="image/*" required />
+    <div class="file-name" id="file-name">No file selected</div>
+
+    <div class="button-group">
+      <button type="submit">Anonymize</button>
+      <button type="button" id="json-btn">Get JSON Output</button>
+    </div>
+  </form>
+
+  {% if before and after %}
+  <div class="meta">
+    <p><strong>Model:</strong> {{ model_url }}</p>
+    <p><strong>Detections:</strong> {{ num_preds }}</p>
+    <p><strong>Average Confidence:</strong> {{ avg_conf }}</p>
+    <p><strong>Confidence Threshold:</strong> {{ confidence_threshold }}</p>
+    <p><strong>Inference Time:</strong> {{ latency }} s</p>
+  </div>
+
+  <div class="images">
+    <div class="card">
+      <h3>Original</h3>
+      <img src="data:image/jpeg;base64,{{ before }}" alt="Original X-Ray" />
+    </div>
+    <div class="card">
+      <h3>Defaced</h3>
+      <img src="data:image/jpeg;base64,{{ after }}" alt="Defaced X-Ray" />
+    </div>
+  </div>
+  {% else %}
+  <p class="placeholder">Upload an image above to see anonymization results.</p>
+  {% endif %}
+
+  <pre id="json-output" class="json-output"></pre>
+
+  <div class="overlay" id="overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <footer>© 2025 X-Ray Defacer Demo by Tobias Scott</footer>
+
+  <script>
+    const fileInput = document.getElementById('file');
+    const fileName = document.getElementById('file-name');
+    const jsonBtn = document.getElementById('json-btn');
+    const jsonOutput = document.getElementById('json-output');
+    const form = document.getElementById('upload-form');
+    const overlay = document.getElementById('overlay');
+
+    fileInput.addEventListener('change', () => {
+      fileName.textContent = fileInput.files.length
+        ? fileInput.files[0].name
+        : 'No file selected';
+    });
+
+    // Show spinner overlay
+    function showOverlay(show) {
+      overlay.classList.toggle('show', show);
+    }
+
+    // Hook into form submission to show overlay
+    form.addEventListener('submit', () => {
+      showOverlay(true);
+    });
+
+    // Hide overlay after navigation (when page reloads)
+    window.addEventListener('pageshow', () => {
+      showOverlay(false);
+    });
+
+    // JSON fetch handler
+    jsonBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please choose a file first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      jsonBtn.textContent = "Processing...";
+      jsonBtn.disabled = true;
+      showOverlay(true);
+      jsonOutput.style.display = "none";
+
+      try {
+        const res = await fetch("/api/deface", { method: "POST", body: formData });
+        const data = await res.json();
+        jsonOutput.textContent = JSON.stringify(data, null, 2);
+        jsonOutput.style.display = "block";
+      } catch (err) {
+        jsonOutput.textContent = "Error fetching JSON response: " + err;
+        jsonOutput.style.display = "block";
+      } finally {
+        jsonBtn.textContent = "Get JSON Output";
+        jsonBtn.disabled = false;
+        showOverlay(false);
+      }
+    });
+  </script>
+</body>
+</html>

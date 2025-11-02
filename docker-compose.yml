@@ -1,0 +1,11 @@
+services:
+  xray-defacer:
+    build: .
+    container_name: xray-defacer
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
