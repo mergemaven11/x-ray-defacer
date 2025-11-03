@@ -60,12 +60,12 @@ app = FastAPI(title="X-Ray Defacer", version="1.0.0")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# @app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["https://xray-defacer.netlify.app"],
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+@app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://x-ray-defacer-production.up.railway.app/"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+ )
 
 # ---------------------------
 # Helpers
