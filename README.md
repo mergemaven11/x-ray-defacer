@@ -117,38 +117,6 @@ These variables are injected at runtime by `python-dotenv` or directly in Railwa
 
 ---
 
-## 🌐 Deployment Guide
-
-### 🔹 Backend (Railway)
-1. Push your repo to GitHub.
-2. Go to [Railway.app](https://railway.app) → “New Project” → “Deploy from GitHub Repo”.
-3. Choose your FastAPI repo.
-4. In **Variables**, add:
-   ```
-   MODEL_URL
-   ROBOFLOW_API_KEY
-   CONFIDENCE_THRESHOLD
-   SAVE_OUTPUTS
-   ```
-5. Railway automatically builds and deploys your Docker container.  
-   You’ll get a live URL, e.g.  
-   ```
-   https://xray-defacer-production.up.railway.app
-   ```
-
-### 🔹 Frontend (Netlify)
-1. Upload your `templates/` + `static/` folder or link to a GitHub repo.
-2. Update API URLs in `index.html`:
-   ```html
-   <form action="https://xray-defacer-production.up.railway.app/deface" ...>
-   ```
-   ```js
-   fetch("https://xray-defacer-production.up.railway.app/api/deface", { ... })
-   ```
-3. Deploy via Netlify → You’ll get  
-   ```
-   https://xray-defacer.netlify.app
-   ```
 
 ### 🔹 CORS Configuration
 Add to `app.py`:

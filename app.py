@@ -26,6 +26,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from PIL import Image, ImageDraw, ImageFilter
+from fastapi.middleware.cors import CORSMiddleware
 import base64
 
 # ---------------------------
@@ -50,6 +51,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("xray-defacer")
 
+
+
 # ---------------------------
 # App & Templates
 # ---------------------------
@@ -57,6 +60,12 @@ app = FastAPI(title="X-Ray Defacer", version="1.0.0")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# @app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://xray-defacer.netlify.app"],
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # ---------------------------
 # Helpers
@@ -256,23 +265,54 @@ async def deface(request: Request, file: UploadFile = File(...)):
 # Small API endpoint for quick testing (JSON)
 # ---------------------------
 @app.post("/api/deface", response_class=JSONResponse)
-async def deface_json(file: UploadFile = File(...)):
+async def api_deface(file: UploadFile = File(...)):
     """
-    JSON endpoint for programmatic use: returns number of filtered predictions and base64 defaced image.
-    Useful for automated tests or command line usage without HTML.
+    JSON endpoint for automated testing or integration.
+    Returns detection metadata and a base64-encoded defaced image.
     """
+    start_time = time.time()
+
+    # read and validate file
     raw = await file.read()
     try:
         image = Image.open(BytesIO(raw)).convert("RGB")
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid image")
+        raise HTTPException(status_code=400, detail=f"Invalid image uploaded: {e}")
 
+    width, height = image.size
     rf_json = call_roboflow(raw)
     preds = parse_predictions(rf_json)
     filtered = filter_by_confidence(preds, CONFIDENCE_THRESHOLD)
-    mask = build_mask_from_preds(*image.size, filtered)
-    defaced = blackout_with_mask(image, mask)
-    out_b64 = to_base64_jpeg(defaced)
-    return {"num_preds": len(filtered), "avg_conf": sum((p.get("confidence") or 0) for p in filtered) / max(len(filtered), 1) if filtered else 0.0, "image": out_b64}
+
+    mask = build_mask_from_preds(width, height, filtered)
+    defaced = blackout_with_mask(image, mask)  # or blur_with_mask
+
+    encoded_img = to_base64_jpeg(defaced)
+    latency = round(time.time() - start_time, 3)
+    avg_conf = round(sum((p.get("confidence") or 0.0) for p in filtered) / max(len(filtered), 1), 4) if filtered else 0.0
+
+    cleaned_preds = [
+        {
+            "class": p.get("class", "unknown"),
+            "confidence": round(p.get("confidence", 0.0), 4),
+            "x": p.get("x"),
+            "y": p.get("y"),
+            "width": p.get("width"),
+            "height": p.get("height"),
+        }
+        for p in filtered
+    ]
+
+    return JSONResponse(
+        {
+            "num_preds": len(filtered),
+            "avg_conf": avg_conf,
+            "predictions": cleaned_preds,
+            "latency": latency,
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
+            "image": encoded_img,
+        }
+    )
+
 
 # EOF
