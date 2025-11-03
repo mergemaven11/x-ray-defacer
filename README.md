@@ -78,7 +78,7 @@ These variables are injected at runtime by `python-dotenv` or directly in Railwa
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/yourusername/xray-defacer.git
+   git clone https://github.com/mergemaven11/xray-defacer.git
    cd xray-defacer
    ```
 
